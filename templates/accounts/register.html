@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block body %}
+<div class="stars-bg" id="starsBg"></div>
+
+<div class="auth-container">
+    <a href="{% url 'home' %}" class="auth-brand">
+        <span class="brand-icon">✦</span>
+        <span class="brand-text">AD ASTRA</span>
+    </a>
+
+    <div class="auth-card">
+        <h2>Join Ad Astra</h2>
+        <p class="auth-subtitle">Create an account to save and share your simulations</p>
+
+        {% if form.errors %}
+        <div class="alert alert-error">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autofocus
+                       value="{{ form.username.value|default:'' }}"
+                       placeholder="Choose a username">
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required
+                       value="{{ form.email.value|default:'' }}"
+                       placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label for="password1">Password</label>
+                <input type="password" id="password1" name="password1" required
+                       placeholder="Create a password">
+            </div>
+            <div class="form-group">
+                <label for="password2">Confirm Password</label>
+                <input type="password" id="password2" name="password2" required
+                       placeholder="Confirm your password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+        </form>
+
+        <p class="auth-footer">
+            Already have an account?
+            <a href="{% url 'accounts:login' %}">Sign in</a>
+        </p>
+    </div>
+</div>
+
+<script>
+const bg = document.getElementById('starsBg');
+for (let i = 0; i < 150; i++) {
+    const s = document.createElement('div');
+    s.className = 'bg-star';
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*100+'%';
+    s.style.animationDelay = Math.random()*3+'s';
+    s.style.width = s.style.height = (Math.random()*2+1)+'px';
+    bg.appendChild(s);
+}
+</script>
+{% endblock %}

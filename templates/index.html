@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+{% block body_class %}landing-page{% endblock %}
+
+{% block body %}
+<div class="stars-bg" id="starsBg"></div>
+
+<nav class="nav-bar">
+    <div class="nav-brand">
+        <span class="brand-icon">✦</span>
+        <span class="brand-text">AD ASTRA</span>
+    </div>
+    <div class="nav-links">
+        {% if user.is_authenticated %}
+            <span class="nav-user">{{ user.username }}</span>
+            <a href="{% url 'accounts:logout' %}" class="nav-link">Logout</a>
+        {% else %}
+            <a href="{% url 'accounts:login' %}" class="nav-link">Login</a>
+            <a href="{% url 'accounts:register' %}" class="nav-link btn-outline">Register</a>
+        {% endif %}
+    </div>
+</nav>
+
+<main class="hero">
+    <div class="hero-content">
+        <h1 class="hero-title">
+            <span class="title-line">AD ASTRA</span>
+            <span class="title-sub">Solar System Simulator</span>
+        </h1>
+        <p class="hero-desc">
+            Explore gravitational dynamics, stellar evolution, and cosmic phenomena
+            in real time — right in your browser. Powered by N-body physics with
+            Barnes-Hut optimization, procedural GPU shaders, and HDR rendering.
+        </p>
+        <div class="hero-actions">
+            <a href="{% url 'simulator' %}" class="btn btn-primary btn-lg">
+                Launch Simulator
+                <span class="btn-arrow">→</span>
+            </a>
+            <a href="#features" class="btn btn-ghost btn-lg">Learn More</a>
+        </div>
+        <div class="hero-stats">
+            <div class="stat">
+                <span class="stat-value">500K+</span>
+                <span class="stat-label">Particles</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">60</span>
+                <span class="stat-label">FPS</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">0</span>
+                <span class="stat-label">Install Required</span>
+            </div>
+        </div>
+    </div>
+</main>
+
+<section id="features" class="features-section">
+    <h2 class="section-title">Features</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🔭</div>
+            <h3>N-Body Physics</h3>
+            <p>Leapfrog & RK4 integrators with Barnes-Hut octree optimization.
+               Real gravitational interactions, not scripted animations.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌟</div>
+            <h3>Procedural Shaders</h3>
+            <p>GPU-generated stellar surfaces with Planck blackbody colors.
+               Every star, planet, and black hole is rendered with custom GLSL shaders.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🕳️</div>
+            <h3>Black Holes</h3>
+            <p>Gravitational lensing effects, accretion discs, and event horizons
+               rendered with physically-inspired post-processing.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Web Workers</h3>
+            <p>Physics runs in a separate thread so the render loop never drops
+               frames, even with thousands of bodies.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💾</div>
+            <h3>Cloud Save</h3>
+            <p>Save your simulations, rewind to any snapshot, and share
+               via tokenised URLs — no account required for guests.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📱</div>
+            <h3>Zero Install</h3>
+            <p>Runs on any device with a WebGL 2.0 capable browser.
+               No downloads, no plugins, no subscriptions.</p>
+        </div>
+    </div>
+</section>
+
+<section class="presets-section">
+    <h2 class="section-title">Pre-built Simulations</h2>
+    <div class="presets-grid" id="presetsGrid">
+        <!-- Populated by JS -->
+    </div>
+</section>
+
+{% if user.is_authenticated %}
+<section class="saved-section">
+    <h2 class="section-title">Your Simulations</h2>
+    <div class="saved-grid" id="savedGrid">
+        <!-- Populated by JS -->
+    </div>
+</section>
+{% endif %}
+
+<footer class="footer">
+    <div class="footer-content">
+        <span class="footer-brand">✦ Ad Astra</span>
+        <span class="footer-copy">WPL Mini-Project — Adi Narayan, Gautham Binod, Karthik Rajkumar</span>
+    </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Animated star background
+    const bg = document.getElementById('starsBg');
+    for (let i = 0; i < 200; i++) {
+        const star = document.createElement('div');
+        star.className = 'bg-star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.animationDelay = Math.random() * 3 + 's';
+        star.style.width = star.style.height = (Math.random() * 2 + 1) + 'px';
+        bg.appendChild(star);
+    }
+
+    // Load presets
+    fetch('/api/presets/')
+        .then(r => r.json())
+        .then(presets => {
+            const grid = document.getElementById('presetsGrid');
+            presets.forEach(p => {
+                const card = document.createElement('a');
+                card.href = '/simulate/?preset=' + p.id;
+                card.className = 'preset-card';
+                card.innerHTML = `
+                    <span class="preset-thumb">${p.thumbnail}</span>
+                    <h3>${p.name}</h3>
+                    <p>${p.description}</p>
+                `;
+                grid.appendChild(card);
+            });
+        })
+        .catch(() => {});
+
+    // Load saved simulations
+    const savedGrid = document.getElementById('savedGrid');
+    if (savedGrid) {
+        fetch('/api/simulations/')
+            .then(r => r.json())
+            .then(sims => {
+                if (sims.length === 0) {
+                    savedGrid.innerHTML = '<p class="empty-msg">No saved simulations yet. Launch the simulator to create one!</p>';
+                    return;
+                }
+                sims.forEach(s => {
+                    const card = document.createElement('a');
+                    card.href = '/simulate/?load=' + s.id;
+                    card.className = 'preset-card';
+                    card.innerHTML = `
+                        <span class="preset-thumb">💾</span>
+                        <h3>${s.name}</h3>
+                        <p>${s.description || 'Last updated: ' + new Date(s.updated_at).toLocaleDateString()}</p>
+                    `;
+                    savedGrid.appendChild(card);
+                });
+            })
+            .catch(() => {});
+    }
+});
+</script>
+{% endblock %}

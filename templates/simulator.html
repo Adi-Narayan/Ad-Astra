@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Simulator{% endblock %}
+{% block body_class %}simulator-page{% endblock %}
+
+{% block extra_head %}
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+{% endblock %}
+
+{% block body %}
+<!-- Canvas -->
+<canvas id="simulatorCanvas"></canvas>
+
+<!-- Top toolbar -->
+<div class="sim-toolbar" id="toolbar">
+    <a href="{% url 'home' %}" class="toolbar-brand" title="Back to Home">
+        <span class="brand-icon">✦</span>
+        <span>AD ASTRA</span>
+    </a>
+
+    <div class="toolbar-center">
+        <button id="btnPlay" class="tool-btn active" title="Play/Pause">
+            <span id="playIcon">⏸</span>
+        </button>
+        <button id="btnStep" class="tool-btn" title="Step Forward">⏭</button>
+        <button id="btnReset" class="tool-btn" title="Reset">↺</button>
+        <div class="speed-control">
+            <label>Speed</label>
+            <input type="range" id="speedSlider" min="0.1" max="10" step="0.1" value="1">
+            <span id="speedLabel">1.0x</span>
+        </div>
+    </div>
+
+    <div class="toolbar-right">
+        <button id="btnTrails" class="tool-btn active" title="Toggle Trails">〰</button>
+        <button id="btnLabels" class="tool-btn active" title="Toggle Labels">Aa</button>
+        <button id="btnGrid" class="tool-btn" title="Toggle Grid">⊞</button>
+        <button id="btnFullscreen" class="tool-btn" title="Fullscreen">⛶</button>
+    </div>
+</div>
+
+<!-- Left panel: Bodies list -->
+<div class="sim-panel panel-left" id="panelLeft">
+    <div class="panel-header">
+        <h3>Bodies</h3>
+        <button id="btnAddBody" class="tool-btn small" title="Add Body">+</button>
+    </div>
+    <div class="panel-content" id="bodiesList"></div>
+
+    <div class="panel-section">
+        <h4>Presets</h4>
+        <div id="presetButtons" class="preset-list"></div>
+    </div>
+
+    <div class="panel-section">
+        <h4>Stats</h4>
+        <div class="stats-grid">
+            <div><span class="stat-k">Bodies</span><span class="stat-v" id="statBodies">0</span></div>
+            <div><span class="stat-k">FPS</span><span class="stat-v" id="statFPS">0</span></div>
+            <div><span class="stat-k">Time</span><span class="stat-v" id="statTime">0.00</span></div>
+            <div><span class="stat-k">Energy</span><span class="stat-v" id="statEnergy">0</span></div>
+            <div><span class="stat-k">Algorithm</span><span class="stat-v" id="statAlgo">Direct</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Right panel: Properties -->
+<div class="sim-panel panel-right" id="panelRight">
+    <div class="panel-header">
+        <h3 id="propTitle">Properties</h3>
+        <button id="btnCloseProps" class="tool-btn small">×</button>
+    </div>
+    <div class="panel-content" id="propsContent">
+        <p class="empty-msg">Select a body to view its properties</p>
+    </div>
+</div>
+
+<!-- Bottom bar: Timeline -->
+<div class="sim-timeline" id="timeline">
+    <span id="timeDisplay">t = 0.00</span>
+    <input type="range" id="timeSlider" min="0" max="1000" value="0" step="1">
+</div>
+
+<!-- Add Body modal -->
+<div class="modal-overlay" id="addBodyModal" style="display:none">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Add Celestial Body</h3>
+            <button id="btnCloseModal" class="tool-btn small">×</button>
+        </div>
+        <form id="addBodyForm" class="auth-form">
+            <div class="form-group">
+                <label>Type</label>
+                <select id="bodyType" name="type">
+                    <option value="star">Star</option>
+                    <option value="planet">Planet</option>
+                    <option value="moon">Moon</option>
+                    <option value="blackhole">Black Hole</option>
+                    <option value="asteroid">Asteroid</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="bodyName" name="name" value="New Body">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Mass</label>
+                    <input type="number" id="bodyMass" name="mass" value="1000" step="any">
+                </div>
+                <div class="form-group">
+                    <label>Radius</label>
+                    <input type="number" id="bodyRadius" name="radius" value="5" step="any">
+                </div>
+            </div>
+            <div class="form-group" id="tempGroup">
+                <label>Temperature (K)</label>
+                <input type="number" id="bodyTemp" name="temperature" value="5778" step="100">
+            </div>
+            <div class="form-group" id="colorGroup" style="display:none">
+                <label>Color</label>
+                <input type="color" id="bodyColor" name="color" value="#4169e1">
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Pos X</label><input type="number" id="bodyPX" value="200" step="any"></div>
+                <div class="form-group"><label>Pos Y</label><input type="number" id="bodyPY" value="0" step="any"></div>
+                <div class="form-group"><label>Pos Z</label><input type="number" id="bodyPZ" value="0" step="any"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Vel X</label><input type="number" id="bodyVX" value="0" step="any"></div>
+                <div class="form-group"><label>Vel Y</label><input type="number" id="bodyVY" value="0" step="any"></div>
+                <div class="form-group"><label>Vel Z</label><input type="number" id="bodyVZ" value="20" step="any"></div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Add Body</button>
+        </form>
+    </div>
+</div>
+
+<!-- Save modal -->
+<div class="modal-overlay" id="saveModal" style="display:none">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Save Simulation</h3>
+            <button id="btnCloseSave" class="tool-btn small">×</button>
+        </div>
+        <form id="saveForm" class="auth-form">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="saveName" required placeholder="My Simulation">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="saveDesc" rows="3" placeholder="Optional description..."></textarea>
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="savePublic"> Make public (shareable link)</label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Save</button>
+        </form>
+        <div id="saveResult" style="display:none" class="auth-footer"></div>
+    </div>
+</div>
+
+<!-- Floating action buttons -->
+<div class="sim-fab">
+    <button id="btnSave" class="tool-btn" title="Save Simulation">💾</button>
+    <button id="btnScreenshot" class="tool-btn" title="Screenshot">📷</button>
+</div>
+
+<!-- Settings panel -->
+<div class="sim-panel panel-settings" id="panelSettings" style="display:none">
+    <div class="panel-header">
+        <h3>Settings</h3>
+        <button id="btnCloseSettings" class="tool-btn small">×</button>
+    </div>
+    <div class="panel-content">
+        <div class="form-group">
+            <label>Integrator</label>
+            <select id="settingIntegrator">
+                <option value="leapfrog">Leapfrog (Symplectic)</option>
+                <option value="rk4">RK4 (High Accuracy)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Time Step</label>
+            <input type="number" id="settingDt" value="0.0001" step="0.00001" min="0.000001" max="0.01">
+        </div>
+        <div class="form-group">
+            <label>Trail Length</label>
+            <input type="range" id="settingTrail" min="0" max="2000" value="500" step="50">
+            <span id="trailLabel">500</span>
+        </div>
+        <div class="form-group">
+            <label>Softening</label>
+            <input type="number" id="settingSoftening" value="10" step="1" min="1" max="100">
+        </div>
+        <div class="form-group">
+            <label>Barnes-Hut θ</label>
+            <input type="number" id="settingTheta" value="0.5" step="0.1" min="0.1" max="2.0">
+        </div>
+        <div class="form-group">
+            <label><input type="checkbox" id="settingBloom" checked> Bloom</label>
+        </div>
+        <div class="form-group">
+            <label><input type="checkbox" id="settingCollisions" checked> Collisions</label>
+        </div>
+    </div>
+</div>
+
+<button id="btnSettings" class="tool-btn settings-toggle" title="Settings">⚙</button>
+
+<script type="module" src="{% static 'js/main.js' %}"></script>
+{% endblock %}

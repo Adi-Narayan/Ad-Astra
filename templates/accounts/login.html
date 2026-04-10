@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block body %}
+<div class="stars-bg" id="starsBg"></div>
+
+<div class="auth-container">
+    <a href="{% url 'home' %}" class="auth-brand">
+        <span class="brand-icon">✦</span>
+        <span class="brand-text">AD ASTRA</span>
+    </a>
+
+    <div class="auth-card">
+        <h2>Welcome Back</h2>
+        <p class="auth-subtitle">Sign in to access your saved simulations</p>
+
+        {% if messages %}
+        <div class="alert alert-error">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autofocus
+                       placeholder="Enter your username">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required
+                       placeholder="Enter your password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        </form>
+
+        <p class="auth-footer">
+            Don't have an account?
+            <a href="{% url 'accounts:register' %}">Create one</a>
+        </p>
+        <p class="auth-footer">
+            <a href="{% url 'simulator' %}">Continue as guest →</a>
+        </p>
+    </div>
+</div>
+
+<script>
+const bg = document.getElementById('starsBg');
+for (let i = 0; i < 150; i++) {
+    const s = document.createElement('div');
+    s.className = 'bg-star';
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*100+'%';
+    s.style.animationDelay = Math.random()*3+'s';
+    s.style.width = s.style.height = (Math.random()*2+1)+'px';
+    bg.appendChild(s);
+}
+</script>
+{% endblock %}
