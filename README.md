@@ -176,4 +176,3 @@ MIT (project), CC BY 4.0 (textures)
 
 ---
 
-**Made with ✦ by [Your Team]**
