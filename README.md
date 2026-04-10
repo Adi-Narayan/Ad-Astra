@@ -36,29 +36,6 @@ python manage.py runserver
 
 Then visit **http://127.0.0.1:8000** in your browser.
 
-### Production Deployment (Railway)
-
-1. **Push to GitHub:**
-   ```bash
-   git init && git add . && git commit -m "Initial commit"
-   git remote add origin https://github.com/YOUR_USERNAME/ad-astra.git
-   git push -u origin main
-   ```
-
-2. **Deploy on Railway:**
-   - Go to https://railway.app
-   - Click **New Project** → **Deploy from GitHub**
-   - Select your repo
-   - Add environment variables:
-     ```
-     DJANGO_SECRET_KEY=<generated secret>
-     DEBUG=False
-     ALLOWED_HOSTS=<your-railway-domain>.up.railway.app
-     CSRF_TRUSTED_ORIGINS=https://<your-railway-domain>.up.railway.app
-     ```
-
-3. **That's it!** Railway auto-runs migrations, seeds presets, and starts the server.
-
 ## Usage
 
 ### Adding Bodies
